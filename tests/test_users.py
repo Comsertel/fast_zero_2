@@ -61,11 +61,11 @@ def test_delete_user(client, user, token):
     assert response.json() == {"message": "User deleted"}
 
 
-def teste_creat_user_username_already_exists(client, user):
+def teste_create_user_username_already_exists(client, user):
     response = client.post(
         "/users/",
         json={
-            "username": "Teste",
+            "username": "teste0",
             "email": "emailnovo@ig.com",
             "password": "password",
         },
@@ -75,12 +75,12 @@ def teste_creat_user_username_already_exists(client, user):
     assert response.json() == {"detail": "Username already exists"}
 
 
-def teste_creat_user_email_already_exists(client, user):
+def teste_create_user_email_already_exists(client, user):
     response = client.post(
         "/users/",
         json={
             "username": "Novo",
-            "email": "teste@test.com",
+            "email": "teste0@test.com",
             "password": "password",
         },
     )
@@ -124,9 +124,9 @@ def test_get_user_id_not_found(client):
     assert response.json() == {"detail": "User not found"}
 
 
-def test_delete_other_user(client, user, token):
+def test_delete_other_user(client, user, other_user, token):
     response = client.delete(
-        f"/users/{user.id + 1}", headers={"Authorization": f"Bearer {token}"}
+        f"/users/{other_user.id}", headers={"Authorization": f"Bearer {token}"}
     )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
