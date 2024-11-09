@@ -77,3 +77,38 @@ def test_token_wrong_user(client, user):
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert response.json() == {"detail": "Incorrect email or password"}
+
+
+def test_refresh_token(client, token):
+    response = client.post(
+        "/auth/token_refresh",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    data = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert "access_token" in data
+    assert "token_type" in data
+    assert data["token_type"] == "bearer"
+
+
+def test_refresh_invalid_token(client, user):
+    with freeze_time("2023-11-08 12:00:00"):
+        response = client.post(
+            "/auth/token",
+            data={"username": user.email, "password": user.clean_password},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert "access_token" in response.json()
+
+        token = response.json()["access_token"]
+
+    with freeze_time("2023-11-08 12:31:00"):
+        response = client.post(
+            "/auth/token_refresh",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        assert response.json() == {"detail": "Could not validate credentials"}
