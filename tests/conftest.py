@@ -1,8 +1,11 @@
+from contextlib import contextmanager
+from datetime import datetime
+
 import factory
 import factory.fuzzy
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -101,3 +104,23 @@ class TodoFactory(factory.Factory):
     description = factory.Faker("text")
     state = factory.fuzzy.FuzzyChoice(TodoState)
     user_id = 1
+
+
+@contextmanager
+def _mock_db_time(*, model, time=datetime(2024, 1, 1)):
+    def fake_time_handler(mapper, connection, target):
+        if hasattr(target, "created_at"):
+            target.created_at = time
+        if hasattr(target, "updated_at"):
+            target.updated_at = time
+
+    event.listen(model, "before_insert", fake_time_handler)
+
+    yield time
+
+    event.remove(model, "before_insert", fake_time_handler)
+
+
+@pytest.fixture
+def mock_db_time():
+    return _mock_db_time
